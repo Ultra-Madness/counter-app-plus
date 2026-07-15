@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#0f172a" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>Counter App Plus</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="favicon-32.png" sizes="32x32" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-title" content="Counter+" />
+<meta name="mobile-web-app-capable" content="yes" />
+<style>
+  :root{
+    --bg:#0f172a; --surface:#1e293b; --surfaceAlt:#334155; --border:#475569;
+    --primary:#38bdf8; --primaryDark:#0ea5e9; --success:#22c55e; --danger:#f87171;
+    --text:#f1f5f9; --muted:#94a3b8; --white:#fff;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    min-height:100vh;
+  }
+  .wrap{max-width:520px; margin:0 auto; padding:16px; padding-bottom:96px;}
+  header{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:8px 0 12px;
+  }
+  .app-title{font-size:22px; font-weight:800; margin:0;}
+  .app-sub{color:var(--muted); font-size:13px; margin-top:2px;}
+  .add-btn{
+    background:var(--primary); color:var(--white); border:none;
+    font-size:15px; font-weight:800; padding:10px 16px; border-radius:999px; cursor:pointer;
+  }
+  .add-btn:active{background:var(--primaryDark);}
+
+  .empty{
+    text-align:center; padding:64px 24px; color:var(--muted);
+  }
+  .empty h2{color:var(--text); font-size:18px; margin:0 0 8px;}
+  .empty p{font-size:15px; line-height:1.5; margin:0;}
+
+  .card{
+    background:var(--surface); border:1px solid var(--border); border-radius:20px;
+    padding:16px; margin-bottom:16px;
+  }
+  .card-head{display:flex; justify-content:space-between; align-items:center;}
+  .card-name{font-size:18px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-right:8px;}
+  .link{background:none; border:none; color:var(--muted); font-size:15px; font-weight:600; cursor:pointer; padding:4px;}
+  .link.small{font-size:13px;}
+  .count{font-size:44px; font-weight:800; text-align:center; margin:8px 0;}
+  .count.reached{color:var(--success);}
+  .goal-wrap{margin-bottom:12px;}
+  .track{height:8px; border-radius:999px; background:var(--surfaceAlt); overflow:hidden;}
+  .fill{height:8px; border-radius:999px; background:var(--primary); width:0%; transition:width .2s ease;}
+  .fill.reached{background:var(--success);}
+  .goal-text{color:var(--muted); font-size:13px; text-align:center; margin-top:4px;}
+  .btn-row{display:flex; gap:12px;}
+  .step{
+    flex:1; padding:16px 0; border-radius:12px; border:none; cursor:pointer;
+    font-size:22px; font-weight:800; color:var(--white);
+  }
+  .minus{background:var(--surfaceAlt);}
+  .plus{background:var(--primary);}
+  .plus:active{background:var(--primaryDark);}
+  .foot-row{display:flex; justify-content:space-between; margin-top:12px;}
+
+  /* Modal */
+  .backdrop{
+    position:fixed; inset:0; background:rgba(0,0,0,.55);
+    display:none; align-items:flex-end; justify-content:center; z-index:20;
+  }
+  .backdrop.open{display:flex;}
+  .sheet{
+    background:var(--surface); width:100%; max-width:520px;
+    border-top-left-radius:20px; border-top-right-radius:20px;
+    padding:24px 24px 40px; max-height:85vh; overflow:auto;
+    animation:slideUp .2s ease;
+  }
+  @keyframes slideUp{from{transform:translateY(100%);} to{transform:translateY(0);}}
+  .sheet h2{font-size:22px; font-weight:800; margin:0 0 16px;}
+  label{display:block; color:var(--muted); font-size:13px; font-weight:600; margin:12px 0 4px;}
+  input{
+    width:100%; background:var(--surfaceAlt); border:1px solid var(--border); border-radius:12px;
+    padding:12px 16px; color:var(--text); font-size:15px;
+  }
+  input:focus{outline:none; border-color:var(--primary);}
+  .primary-btn{
+    width:100%; background:var(--primary); color:var(--white); border:none;
+    padding:16px; border-radius:12px; font-size:18px; font-weight:800; cursor:pointer; margin-top:24px;
+  }
+  .primary-btn:active{background:var(--primaryDark);}
+  .text-btn{width:100%; background:none; border:none; color:var(--muted); font-size:15px; font-weight:600; padding:12px; cursor:pointer; margin-top:8px;}
+  .text-btn.danger{color:var(--danger);}
+
+  .summary-row{display:flex; gap:12px; margin-bottom:16px;}
+  .summary-box{flex:1; background:var(--surfaceAlt); border-radius:12px; padding:12px 8px; text-align:center;}
+  .summary-val{font-size:22px; font-weight:800;}
+  .summary-lbl{color:var(--muted); font-size:12px; margin-top:4px;}
+  .log-row{display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--border);}
+  .log-val{font-size:15px; font-weight:600;}
+  .log-date{color:var(--muted); font-size:13px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1 class="app-title">Counter App Plus</h1>
+      <div class="app-sub" id="subtitle">Track reps, inventory, attendance, habits</div>
+    </div>
+    <button class="add-btn" id="addBtn">+ New</button>
+  </header>
+  <div id="list"></div>
+</div>
+
+<!-- Add / Edit modal -->
+<div class="backdrop" id="formBackdrop">
+  <div class="sheet">
+    <h2 id="formTitle">New counter</h2>
+    <label for="fName">Name</label>
+    <input id="fName" type="text" placeholder="e.g. Pushups, Boxes, Guests" />
+    <label for="fStep">Step size (how much +/- changes)</label>
+    <input id="fStep" type="number" inputmode="numeric" placeholder="1" />
+    <label for="fGoal">Goal (optional)</label>
+    <input id="fGoal" type="number" inputmode="numeric" placeholder="Leave blank for no goal" />
+    <button class="primary-btn" id="saveBtn">Add counter</button>
+    <button class="text-btn" id="cancelBtn">Cancel</button>
+    <button class="text-btn danger" id="deleteBtn" style="display:none;">Delete this counter</button>
+  </div>
+</div>
+
+<!-- History modal -->
+<div class="backdrop" id="histBackdrop">
+  <div class="sheet">
+    <h2 id="histTitle">History</h2>
+    <div class="summary-row">
+      <div class="summary-box"><div class="summary-val" id="hCurrent">0</div><div class="summary-lbl">Current</div></div>
+      <div class="summary-box"><div class="summary-val" id="hAllTime">0</div><div class="summary-lbl">All-time total</div></div>
+      <div class="summary-box"><div class="summary-val" id="hResets">0</div><div class="summary-lbl">Resets</div></div>
+    </div>
+    <div id="histList"></div>
+    <button class="primary-btn" id="histClose" style="background:var(--surfaceAlt);">Close</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var STORAGE_KEY = "counter_app_plus_web_v1";
+  var counters = [];
+  var editingId = null;   // null while adding
+  var historyId = null;
+
+  function makeId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+
+  function load(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      counters = raw ? JSON.parse(raw) : [];
+      if(!Array.isArray(counters)) counters = [];
+    }catch(e){ counters = []; }
+  }
+  function save(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(counters)); }catch(e){}
+  }
+  function find(id){ return counters.filter(function(c){return c.id===id;})[0]; }
+
+  function esc(s){
+    return String(s).replace(/[&<>"']/g, function(m){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
+    });
+  }
+  function fmtDate(ms){
+    var d = new Date(ms);
+    return d.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+  }
+
+  // ---- Render list ----
+  function render(){
+    var sub = document.getElementById('subtitle');
+    sub.textContent = counters.length===0
+      ? 'Track reps, inventory, attendance, habits'
+      : counters.length + ' counter' + (counters.length===1?'':'s');
+
+    var list = document.getElementById('list');
+    if(counters.length===0){
+      list.innerHTML =
+        '<div class="empty"><h2>No counters yet</h2>' +
+        '<p>Tap &ldquo;+ New&rdquo; to create your first counter. Give it a name, choose a step size, and optionally set a goal.</p></div>';
+      return;
+    }
+    list.innerHTML = counters.map(function(c){
+      var hasGoal = c.goal!==null && c.goal>0;
+      var reached = hasGoal && c.count>=c.goal;
+      var pct = hasGoal ? Math.min(c.count/c.goal,1)*100 : 0;
+      var goalHtml = '';
+      if(hasGoal){
+        goalHtml =
+          '<div class="goal-wrap"><div class="track">' +
+          '<div class="fill'+(reached?' reached':'')+'" style="width:'+pct+'%"></div></div>' +
+          '<div class="goal-text">'+(reached ? ('Goal reached! ('+c.goal+')') : (c.count+' / '+c.goal))+'</div></div>';
+      }
+      return '<div class="card">' +
+        '<div class="card-head"><div class="card-name">'+esc(c.name)+'</div>' +
+        '<button class="link small" data-act="edit" data-id="'+c.id+'">Edit</button></div>' +
+        '<div class="count'+(reached?' reached':'')+'">'+c.count+'</div>' +
+        goalHtml +
+        '<div class="btn-row">' +
+        '<button class="step minus" data-act="dec" data-id="'+c.id+'">-'+c.step+'</button>' +
+        '<button class="step plus" data-act="inc" data-id="'+c.id+'">+'+c.step+'</button></div>' +
+        '<div class="foot-row">' +
+        '<button class="link" data-act="hist" data-id="'+c.id+'">History ('+c.history.length+')</button>' +
+        '<button class="link" data-act="reset" data-id="'+c.id+'" style="color:var(--danger)">Reset</button>' +
+        '</div></div>';
+    }).join('');
+  }
+
+  // ---- Actions ----
+  function inc(id){ var c=find(id); if(c){ c.count+=c.step; save(); render(); } }
+  function dec(id){ var c=find(id); if(c){ c.count=Math.max(0,c.count-c.step); save(); render(); } }
+  function reset(id){
+    var c=find(id); if(!c) return;
+    if(!confirm('Reset "'+c.name+'" back to 0? The value it reached ('+c.count+') will be saved in its history.')) return;
+    if(c.count>0){ c.history.push({id:makeId(), previousCount:c.count, at:Date.now()}); }
+    c.count=0; save(); render();
+  }
+
+  // ---- Add/Edit modal ----
+  function openForm(id){
+    editingId = id || null;
+    var c = id ? find(id) : null;
+    document.getElementById('formTitle').textContent = c ? 'Edit counter' : 'New counter';
+    document.getElementById('saveBtn').textContent = c ? 'Save changes' : 'Add counter';
+    document.getElementById('fName').value = c ? c.name : '';
+    document.getElementById('fStep').value = c ? c.step : '1';
+    document.getElementById('fGoal').value = (c && c.goal!==null) ? c.goal : '';
+    document.getElementById('deleteBtn').style.display = c ? 'block' : 'none';
+    document.getElementById('formBackdrop').classList.add('open');
+  }
+  function closeForm(){ document.getElementById('formBackdrop').classList.remove('open'); editingId=null; }
+  function saveForm(){
+    var name = document.getElementById('fName').value.trim() || 'Untitled';
+    var step = parseInt(document.getElementById('fStep').value,10);
+    if(!(step>0)) step = 1;
+    var goalRaw = document.getElementById('fGoal').value.trim();
+    var goal = goalRaw==='' ? null : parseInt(goalRaw,10);
+    if(!(goal>0)) goal = null;
+    if(editingId){
+      var c=find(editingId); if(c){ c.name=name; c.step=step; c.goal=goal; }
+    }else{
+      counters.push({id:makeId(), name:name, count:0, step:step, goal:goal, history:[], createdAt:Date.now()});
+    }
+    save(); render(); closeForm();
+  }
+  function deleteCurrent(){
+    if(!editingId) return;
+    var c=find(editingId); if(!c) return;
+    if(!confirm('Delete "'+c.name+'" and its history? This cannot be undone.')) return;
+    counters = counters.filter(function(x){return x.id!==editingId;});
+    save(); render(); closeForm();
+  }
+
+  // ---- History modal ----
+  function openHist(id){
+    historyId = id;
+    var c = find(id); if(!c) return;
+    var resetTotal = c.history.reduce(function(s,h){return s+(h.previousCount||0);},0);
+    document.getElementById('histTitle').textContent = c.name + ' — History';
+    document.getElementById('hCurrent').textContent = c.count;
+    document.getElementById('hAllTime').textContent = resetTotal + c.count;
+    document.getElementById('hResets').textContent = c.history.length;
+    var listEl = document.getElementById('histList');
+    if(c.history.length===0){
+      listEl.innerHTML = '<p style="color:var(--muted); font-size:15px; line-height:1.5; margin:0 0 16px;">No resets yet. When you reset this counter, the value it reached is saved here with a timestamp.</p>';
+    }else{
+      listEl.innerHTML = c.history.slice().reverse().map(function(h){
+        return '<div class="log-row"><div class="log-val">Reached '+h.previousCount+'</div><div class="log-date">'+fmtDate(h.at)+'</div></div>';
+      }).join('');
+    }
+    document.getElementById('histBackdrop').classList.add('open');
+  }
+  function closeHist(){ document.getElementById('histBackdrop').classList.remove('open'); historyId=null; }
+
+  // ---- Wire up events ----
+  document.getElementById('addBtn').addEventListener('click', function(){ openForm(null); });
+  document.getElementById('saveBtn').addEventListener('click', saveForm);
+  document.getElementById('cancelBtn').addEventListener('click', closeForm);
+  document.getElementById('deleteBtn').addEventListener('click', deleteCurrent);
+  document.getElementById('histClose').addEventListener('click', closeHist);
+
+  // Close modals by tapping the dark backdrop
+  document.getElementById('formBackdrop').addEventListener('click', function(e){ if(e.target===this) closeForm(); });
+  document.getElementById('histBackdrop').addEventListener('click', function(e){ if(e.target===this) closeHist(); });
+
+  // Event delegation for the counter cards
+  document.getElementById('list').addEventListener('click', function(e){
+    var btn = e.target.closest('button[data-act]'); if(!btn) return;
+    var id = btn.getAttribute('data-id'), act = btn.getAttribute('data-act');
+    if(act==='inc') inc(id);
+    else if(act==='dec') dec(id);
+    else if(act==='reset') reset(id);
+    else if(act==='edit') openForm(id);
+    else if(act==='hist') openHist(id);
+  });
+
+  load();
+  render();
+})();
+</script>
+</body>
+</html>
